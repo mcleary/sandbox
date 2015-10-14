@@ -17,13 +17,13 @@ def find_root(function, derivative, first_approximation, max_iterations=100, ver
     :return: a root of function f
     """
     previous_approx = float(first_approximation)
-    for iIteration in xrange(max_iterations):
+    for i_iteration in xrange(max_iterations):
         next_approx = previous_approx - (function(previous_approx) / derivative(previous_approx))
         numeric_error = math.fabs(next_approx - previous_approx)
         previous_approx = next_approx
 
         if verbose:
-            print(iIteration, 'Cur. Approx: ', next_approx, 'Error: ', numeric_error)
+            print(i_iteration, 'Cur. Approx: ', next_approx, 'Error: ', numeric_error)
 
         if numeric_error < sys.float_info.epsilon:
             break
