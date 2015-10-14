@@ -3,9 +3,6 @@ import sys
 
 __author__ = 'mcleary'
 
-# f(x) = x^3 - 2x - 5
-# dfdx = 3x^2 - 2
-
 
 def find_root(function, derivative, first_approximation, max_iterations=100, verbose=False):
     """
@@ -23,7 +20,7 @@ def find_root(function, derivative, first_approximation, max_iterations=100, ver
         previous_approx = next_approx
 
         if verbose:
-            print(i_iteration, 'Cur. Approx: ', next_approx, 'Error: ', numeric_error)
+            print('Iteration {iteration}. Approx: {approx:.8f}. Error: {error:.8f}'.format(iteration=i_iteration, approx=next_approx, error=numeric_error))
 
         if numeric_error < sys.float_info.epsilon:
             break
@@ -32,7 +29,15 @@ def find_root(function, derivative, first_approximation, max_iterations=100, ver
 
 
 if __name__ == '__main__':
-    #root = find_root(function=f, derivative=dfdx, max_iterations=20, first_approximation=2.0, verbose=True)
-    root = find_root(function=lambda x: (x * x * x) - (2 * x) - 5, derivative=lambda x: (3 * x * x) - 2,
-                     first_approximation=2, verbose=True)
-    print('{0:.10f}'.format(root))
+    # f(x) = x^3 - 2x - 5
+    # dfdx = 3x^2 - 2
+
+    def f(x): return (x * x * x) - (2 * x) - 5
+
+    def dfdx(x): return (3 * x * x) - 2
+
+    root = find_root(function=f, derivative=dfdx, first_approximation=2, verbose=True)
+    print('The root of x^3 - 2x - 5 = 0 is {0:.30f}'.format(root))
+    f_root = f(root)
+    print('Replacing the root value in the function gives: {0}, which is preety close to 0.'.format(f_root))
+
