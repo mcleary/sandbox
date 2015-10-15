@@ -2,6 +2,16 @@ __author__ = 'mcleary'
 
 
 def euler_solver(equation, x0, y0, step_size=0.01, max_iterations=100, verbose=False):
+    """
+    Simple implementation of the Euler Solver to approximate the solution of equations
+    :param equation: Function in the form f(x,y)
+    :param x0: x value of the initial condition
+    :param y0: y value of the initial condition
+    :param step_size: step to advance in x in each iteration
+    :param max_iterations: number of iterations to run the method
+    :param verbose: prints information about execution
+    :return: xn, yn. Two lists contains all the values calculated for the solution approximation
+    """
     x = float(x0)
     y = float(y0)
     xn = [x]
