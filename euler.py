@@ -16,7 +16,7 @@ def euler_solver(equation, x0, y0, step_size=0.01, max_iterations=100, verbose=F
     y = float(y0)
     xn = [x]
     yn = [y]
-    for i_iteration in xrange(max_iterations):
+    for i_iteration in range(max_iterations):
         previous_y = yn[i_iteration]
         previous_x = xn[i_iteration]
         next_x = previous_x + step_size
@@ -36,7 +36,7 @@ def main():
 
     xn, yn = euler_solver(equation=f, x0=0.0, y0=1.0, verbose=True)
 
-    print xn, yn
+    print(xn, yn)
 
 if __name__ == '__main__':
     main()
