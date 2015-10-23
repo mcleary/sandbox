@@ -14,13 +14,13 @@ def find_root(function, derivative, first_approximation, max_iterations=100, ver
     :return: a root of function f
     """
     previous_approx = float(first_approximation)
-    for i_iteration in xrange(max_iterations):
+    for i_iteration in range(max_iterations):
         next_approx = previous_approx - (function(previous_approx) / derivative(previous_approx))
         numeric_error = math.fabs(next_approx - previous_approx)
         previous_approx = next_approx
 
         if verbose:
-            print('Iteration {iteration}. Approx: {approx:.8f}. Error: {error:.8f}'.format(iteration=i_iteration, approx=next_approx, error=numeric_error))
+            print(('Iteration {iteration}. Approx: {approx:.8f}. Error: {error:.8f}'.format(iteration=i_iteration, approx=next_approx, error=numeric_error)))
 
         if numeric_error < sys.float_info.epsilon:
             break
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     def dfdx(x): return (3 * x * x) - 2
 
     root = find_root(function=f, derivative=dfdx, first_approximation=2, verbose=True)
-    print('The root of x^3 - 2x - 5 = 0 is {0:.30f}'.format(root))
+    print(('The root of x^3 - 2x - 5 = 0 is {0:.30f}'.format(root)))
     f_root = f(root)
-    print('Replacing the root value in the function gives: {0}, which is preety close to 0.'.format(f_root))
+    print(('Replacing the root value in the function gives: {0}, which is preety close to 0.'.format(f_root)))
 
