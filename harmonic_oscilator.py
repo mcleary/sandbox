@@ -1,5 +1,7 @@
 import ploter
 
+__author__ = 'mcleary'
+
 def main():    
     mass = 1.0 
     spring_constant = 2.0
