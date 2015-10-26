@@ -19,11 +19,10 @@ def plot_vector_field(dxdt, dydt, x_range=[-100,100], y_range=[-100,100], grid_r
     
     # Generate Vector Field
     vx = dxdt(x,y)
-    vy = dydt(x,y)
-    
-    norm = 1 / np.sqrt(vx**2 + vy**2)
+    vy = dydt(x,y)    
     
     if normalize:
+        norm = 1 / np.sqrt(vx**2 + vy**2)
         vx = vx * norm
         vy = vy * norm
     
