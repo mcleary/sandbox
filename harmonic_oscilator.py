@@ -1,4 +1,4 @@
-import plot
+import ploter
 
 def main():    
     mass = 1.0 
@@ -8,9 +8,9 @@ def main():
     inv_mass = 1.0 / mass
     
     def dxdt(x, y): return y
-    def dydt(x, y): return (-damping_constant * inv_mass * y) - (spring_constant * inv_mass * x)
+    def dydt(x, y): return (-damping_constant * inv_mass * y) - (spring_constant * inv_mass * x)    
     
-    plot.plot_vector_field(dxdt, dydt, normalize=False, grid_resolution=20)    
+    ploter.plot_vector_field(dxdt, dydt, normalize=False, grid_resolution=20)
     
 
 if __name__ == '__main__':
