@@ -110,18 +110,21 @@ def example6():
     This example shows how to plot a vector field in a much simpler manner
     """
     # generate grid
-    x = np.linspace(-10, 10, 10)
-    y = np.linspace(-10, 10, 10)
+    print('Grid Resolution (10 is recomended): ', end='')
+    grid_resolution = int(input())
+    x = np.linspace(-10, 10, grid_resolution)
+    y = np.linspace(-10, 10, grid_resolution)
     x, y = np.meshgrid(x, y)
 
+    # Lorenz-attractor projected into z=0
     # calculate vector field
-    alpha = 3
-    rho = 26.5
-    #vx = alpha*(y - x) / pylab.sqrt(x**2+y**2)
-    #vy = (rho*x - y) / pylab.sqrt(x**2+y**2)
-
-    vx = y / np.sqrt(x**2, y**2)
-    vy = -x / np.sqrt(x**2, y**2)
+    # alpha = 3
+    # rho = 26.5
+    # vx = alpha*(y - x) / np.sqrt(x**2 + y**2)
+    # vy = (rho*x - y) / np.sqrt(x**2 + y**2)        
+    
+    vx = y / np.sqrt(x**2 + y**2)    
+    vy = -x / np.sqrt(x**2 + y**2)    
 
     # plot vector field
     plt.quiver(x, y, vx, vy, pivot='middle', headwidth=4, headlength=6)
@@ -132,7 +135,7 @@ def example6():
 
 
 def main():
-    print('Choose example to run (1 to 6): ')
+    print('Choose example to run (1 to 6): ', end='')
     read_number = int(input())
     if read_number not in range(1, 7):
         print('Example {example_number} not found.'.format(example_number=read_number))
