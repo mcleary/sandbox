@@ -9,7 +9,7 @@ def main():
     y = np.linspace(-100, 100, grid_resolution)
     x, y = np.meshgrid(x, y)
     
-    m = 1.0
+    m = 1.5
     b = 0.5
     k = 0.5
     
@@ -17,6 +17,9 @@ def main():
     
     vx = y
     vy = (-b*inv_m*y - k*inv_m*x)
+    
+    vx = vx / np.sqrt(vx**2 + vy**2)
+    vy = vy / np.sqrt(vx**2 + vy**2)
 
     # plot vector field
     plt.quiver(x, y, vx, vy, pivot='middle', headwidth=4, headlength=6)

@@ -123,8 +123,8 @@ def example6():
     # vx = alpha*(y - x) / np.sqrt(x**2 + y**2)
     # vy = (rho*x - y) / np.sqrt(x**2 + y**2)        
     
-    vx = y / np.sqrt(x**2 + y**2)    
-    vy = -x / np.sqrt(x**2 + y**2)    
+    vx = y / np.sqrt(x**2 + y**2)
+    vy = -x / np.sqrt(x**2 + y**2)
 
     # plot vector field
     plt.quiver(x, y, vx, vy, pivot='middle', headwidth=4, headlength=6)
