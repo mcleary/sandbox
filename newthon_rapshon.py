@@ -1,7 +1,7 @@
 import math
 import sys
 
-__author__ = 'mcleary'
+
 
 
 def find_root(function, derivative, first_approximation, max_iterations=100, verbose=False):
