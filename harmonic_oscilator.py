@@ -1,33 +1,19 @@
-import numpy as np
-import matplotlib.pyplot as plt
+import ploter
 
+__author__ = 'mcleary'
 
-def main():
-    print('Grid Resolution (10 is recomended): ', end='')
-    grid_resolution = int(input())
-    x = np.linspace(-100, 100, grid_resolution)
-    y = np.linspace(-100, 100, grid_resolution)
-    x, y = np.meshgrid(x, y)
+def main():    
+    mass = 1.0 
+    spring_constant = 2.0
+    damping_constant = 0.0
     
-    m = 1.5
-    b = 0.5
-    k = 0.5
+    inv_mass = 1.0 / mass
     
-    inv_m = 1.0 / m
+    def dxdt(x, y): return y
+    def dydt(x, y): return (-damping_constant * inv_mass * y) - (spring_constant * inv_mass * x)    
     
-    vx = y
-    vy = (-b*inv_m*y - k*inv_m*x)
+    ploter.plot_vector_field(dxdt, dydt, normalize=False, grid_resolution=20)
     
-    vx = vx / np.sqrt(vx**2 + vy**2)
-    vy = vy / np.sqrt(vx**2 + vy**2)
-
-    # plot vector field
-    plt.quiver(x, y, vx, vy, pivot='middle', headwidth=4, headlength=6)
-    plt.xlabel('$x$')
-    plt.ylabel('$y$')
-    plt.axis('image')
-    plt.show()
-
 
 if __name__ == '__main__':
     main()
