@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def plot_vector_field(dxdt, dydt, x_range=[-100,100], y_range=[-100,100], grid_resolution=10, normalize=True):    
     """    
     Plots a vector field with vectors generated from dxdt and dydt functions.
