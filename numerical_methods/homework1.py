@@ -96,34 +96,34 @@ def jacobi_approximation(A, b, x0):
             t1, t2 = 0.0, 0.0
             for j in range(0, i):
                 t1 += A[i][j] * x_old[j]
-            for j in range(i, n):
+            for j in range(i+1, n):
                 t2 += A[i][j] * x_old[j]
 
             x_new[i] = (b[i] - t1 - t2) / A[i][i]
 
         x_old = x_new
-        print x_new
+
+    return x_new
 
 
 def main():
-    n = 3
+    for n in range(3, 20):
+        #A = [[0 for _ in range(n)] for _ in range(n)]
+        #for i in range(0, n):
+        #    A[i][i] = 2.0
 
-    #A = [[0 for _ in range(n)] for _ in range(n)]
-    #for i in range(0, n):
-    #    A[i][i] = 2.0
+        A = hilbert(n)
+        x = [1 for _ in range(n)]
+        b = mat_vec_mul(A, x)
 
-    A = hilbert(n)
-    x = [1 for _ in range(n)]
-    b = mat_vec_mul(A, x)
+        x0 = gauss_solver(A, b)
+        x0 = jacobi_approximation(A, b, x0)
 
-    x0 = gauss_solver(A, b)
-    jacobi_approximation(A, b, x0)
+        x0n = np.linalg.solve(A, b)
 
-    x0n = np.linalg.solve(A, b)
-
-    print
-    print x0
-    print x0n
+        print
+        print "Gauss Solver: " + str(x0)
+        print "NumPy Solver: " + str(x0n)
 
 if __name__ == '__main__':
     main()
