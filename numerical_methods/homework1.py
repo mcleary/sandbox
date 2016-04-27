@@ -11,7 +11,7 @@ def print_matrix(M):
     print '-' * len(M) * 12     # Linha Horizontal
 
 
-def mat_mat_mul(A, B):
+def mat_mul(A, B):
     n = len(A)
     C = [[0 for _ in range(n)] for _ in range(n)]
     for i in range(len(A)):
@@ -26,7 +26,23 @@ def mat_vec_mul(A, v):
     for i in range(n):
         for j in range(n):
             Av[i] += A[i][j] * v[i]
-    return Av;
+    return Av
+
+
+def vec_minus(x, y):
+    n = len(x)
+    dx = [0 for _ in range(n)]
+    for i in range(n):
+        dx[i] = x[i] - y[i]
+    return dx
+
+
+def inf_norm(x):
+    max_value = abs(x[0])
+    for xi in x:
+        if abs(xi) > max_value:
+            max_value = abs(xi)
+    return max_value
 
 
 def hilbert(n):
@@ -64,7 +80,7 @@ def gauss_solver(A, b):
         max_elem = abs(A_b[i][i])
         max_row = i
         for k in range(i+1, n):
-            if abs(A_b[k][i] > max_elem):
+            if abs(A_b[k][i]) > max_elem:
                 max_elem = abs(A_b[k][i])
                 max_row = k
 
@@ -88,10 +104,15 @@ def gauss_solver(A, b):
 def jacobi_approximation(A, b, x0):
     n = len(A)
 
-    x_new = [0 for _ in x0]
+    x_new = [x for x in x0]
     x_old = [x for x in x0]
 
-    for iteration in range(100):
+    Ax = mat_vec_mul(A, x0)
+    r = vec_minus(b, Ax)
+
+    nr = 0
+
+    while abs(inf_norm(r)) > 10E-2 and nr < 1000:
         for i in range(n):
             t1, t2 = 0.0, 0.0
             for j in range(0, i):
@@ -101,9 +122,13 @@ def jacobi_approximation(A, b, x0):
 
             x_new[i] = (b[i] - t1 - t2) / A[i][i]
 
-        x_old = x_new
+        Ax = mat_vec_mul(A, x_new)
+        r = vec_minus(b, Ax)
 
-    return x_new
+        x_old = x_new
+        nr += 1
+
+    return x_new, nr
 
 
 def main():
@@ -112,18 +137,17 @@ def main():
         #for i in range(0, n):
         #    A[i][i] = 2.0
 
-        A = hilbert(n)
+        H = hilbert(n)
         x = [1 for _ in range(n)]
-        b = mat_vec_mul(A, x)
+        b = mat_vec_mul(H, x)
 
-        x0 = gauss_solver(A, b)
-        x0 = jacobi_approximation(A, b, x0)
+        x0 = gauss_solver(H, b)
+        x0p, n_iter = jacobi_approximation(H, b, x0)
 
-        x0n = np.linalg.solve(A, b)
+        dx = inf_norm(vec_minus(x0p, x))
 
-        print
-        print "Gauss Solver: " + str(x0)
-        print "NumPy Solver: " + str(x0n)
+        print "n: {n: <4} dx: {dx: .20f}   nr: {nr: < 4}   cond(H): {cond_H: <10}".format(n=n, dx=dx, nr=n_iter, cond_H='---')
+
 
 if __name__ == '__main__':
     main()
