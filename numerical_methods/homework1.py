@@ -29,6 +29,7 @@ def mat_mul(A, B):
         for j in range(len(B[0])):
             for k in range(len(B)):
                 C[i][j] += A[i][k] * B[k][j]
+    return C
 
 
 def mat_vec_mul(A, v):
@@ -182,14 +183,66 @@ def invert_matrix(X):
     return A
 
 
-def upper_triangular_solver(A):
+def transpose_matrix(A):
     n = len(A)
+    T = [[0 for _ in range(n)] for _ in range(n)]
+    for i in range(n):
+        for j in range(n):
+            T[i][j] = A[j][i]
+    return T
+
+
+def upper_triangular_solver(U, b):
+    n = len(U)
     x = [0 for _ in range(n)]
+
+    x[n - 1] = b[n - 1] / U[n - 1][n - 1]
     for i in range(n-1, -1, -1):
-        x[i] = A[i][n] / A[i][i]
-        for k in range(i - 1, -1, -1):
-            A[k][n] -= A[k][i] * x[i]
+        tmp = 0.0
+        for j in range(i+1, n):
+            tmp += U[i][j] * x[j]
+        x[i] = (b[i] - tmp) / U[i][i]
+
     return x
+
+
+def lower_triangular_solver(L, b):
+    n = len(L)
+    x = [0 for _ in range(n)]
+
+    x[0] = b[0] / L[0][0]
+    for i in range(1, n):
+        tmp = 0.0
+        for j in range(0, i):
+            tmp += L[i][j] * x[j]
+        x[i] = (b[i] - tmp) / L[i][i]
+
+    return x
+
+
+def ldlt_solver(A, b):
+    n = len(A)
+    L = identity_matrix(n)
+    D = [0 for _ in range(n)] # Matriz D na forma de um vetor
+
+    # Decomposição LDLT
+    for j in range(n):
+        tmp = 0.0
+        for k in range(j):
+            tmp += L[j][k]**2 * D[k]
+        D[j] = A[j][j] - tmp
+
+        for i in range(j+1, n):
+            tmp = 0.0
+            for k in range(0, j):
+                tmp += L[i][k] * D[k] * L[j][k]
+            L[i][j] = (A[i][j] - tmp) / D[j]
+
+    # Solução do sistema linear LDL(T) x = b
+    w = lower_triangular_solver(L, b)
+    y = [w[i] / D[i] for i in range(n)]
+    LT = transpose_matrix(L)
+    return upper_triangular_solver(LT, y)
 
 
 def gauss_solver(A, b):
@@ -247,7 +300,7 @@ def heder_iterative_method(A, x, b):
     iter_count = 0
 
     while inf_norm_vector(r) > 1E-2:
-        z = gauss_solver(A, r)
+        z = ldlt_solver(A, r)
         x_star = vec_plus(x_star, z)
         A_x_star = mat_vec_mul(A, x_star)
         r = vec_minus(b, A_x_star)
@@ -258,20 +311,21 @@ def heder_iterative_method(A, x, b):
 
 
 def main():
-    for n in range(12, 13):
+    for n in range(2, 13):
         H = hilbert_matrix(n)
         x = [1 for _ in range(n)]
         b = mat_vec_mul(H, x)
 
-        x0 = gauss_solver(H, b)
-        x0p, n_iter = heder_iterative_method(H, x0, b)
+        x0 = ldlt_solver(H, b)
+        x_iter, n_iter = heder_iterative_method(H, x0, b)
 
-        dx = inf_norm_vector(vec_minus(x0p, x))
+        dx = inf_norm_vector(vec_minus(x_iter, x))
 
         H_inv = invert_matrix(H)
         cond_H = inf_norm_matrix(H) * inf_norm_matrix(H_inv)
+        x_iter_norm = inf_norm_vector(x_iter)
 
-        print "n: {n: <4} dx: {dx: .20f}   nr: {nr: < 4}   cond(H): {cond_H: <10}".format(n=n, dx=dx, nr=n_iter, cond_H=cond_H)
+        print "n: {n: <4} dx: {dx: .20f}   dx_ter: {x_iter: .20f}  nr: {nr: < 4}  cond(H): {cond_H: .20f}".format(n=n, dx=dx, x_iter=x_iter_norm, nr=n_iter, cond_H=cond_H)
 
 
 if __name__ == '__main__':
