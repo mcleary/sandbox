@@ -1,5 +1,7 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import sys
-import numpy as np
 
 
 def print_matrix(M):
@@ -9,6 +11,15 @@ def print_matrix(M):
             sys.stdout.write('{elem: .8f} '.format(elem=elem))
         print
     print '-' * len(M) * 12     # Linha Horizontal
+
+
+def mat_scalar_mul(A, s):
+    n = len(A)
+    As = [[0 for _ in range(n)] for _ in range(n)]
+    for i in range(n):
+        for j in range(n):
+            As[i][j] = A[i][j] * s
+    return As
 
 
 def mat_mul(A, B):
@@ -29,6 +40,14 @@ def mat_vec_mul(A, v):
     return Av
 
 
+def vec_plus(x, y):
+    n = len(x)
+    dx = [0 for _ in range(n)]
+    for i in range(n):
+        dx[i] = x[i] + y[i]
+    return dx
+
+
 def vec_minus(x, y):
     n = len(x)
     dx = [0 for _ in range(n)]
@@ -37,7 +56,12 @@ def vec_minus(x, y):
     return dx
 
 
-def inf_norm(x):
+def inf_norm_vector(x):
+    """
+    Norma infinito de um vetor
+    :param x:
+    :return:
+    """
     max_value = abs(x[0])
     for xi in x:
         if abs(xi) > max_value:
@@ -45,12 +69,117 @@ def inf_norm(x):
     return max_value
 
 
-def hilbert(n):
+def inf_norm_matrix(X):
+    """
+    Norma infinito de uma matriz
+    :param X:
+    :return:
+    """
+    n = len(X)
+    max_column_sum = 0.0
+    for i in range(n):
+        column_sum = 0.0
+        for j in range(n):
+            column_sum += X[i][j]
+        if abs(column_sum) > max_column_sum:
+            max_column_sum = abs(column_sum)
+    return max_column_sum
+
+
+def identity_matrix(n):
+    I = [[0 for _ in range(n)] for _ in range(n)]
+    for i in range(n):
+        I[i][i] = 1
+    return I
+
+
+def hilbert_matrix(n):
     H = [[0 for _ in range(n)] for _ in range(n)]
     for i in range(0, n):
         for j in range(0, n):
             H[i][j] = 1.0 / (i+1 + j+1 - 1)
     return H
+
+
+def check_for_all_zeros(X, i, j):
+    """
+    Verifica se todos os elementos abaixo da linha i coluna j são zeros
+        zero_sum - Quantos
+        first_non_zero - index of the first non value
+    :param X:
+    :param i: Linha
+    :param j: Coluna
+    :return: O número de zeros encontrados e a primeira linha que contém um elemento diferente de zero
+    """
+    non_zeros = []
+    first_non_zero = -1
+    for m in range(i, len(X)):
+        non_zero = X[m][j] != 0
+        non_zeros.append(non_zero)
+        if first_non_zero == -1 and non_zero:
+            first_non_zero = m
+    zeros_count = sum(non_zeros)
+    return zeros_count, first_non_zero
+
+
+def invert_matrix(X):
+    """
+    Inverte uma matriz usando a eliminassão de gauss-jordan
+    A matriz é colocada na forma de echelon
+
+    A matriz identidade é concatenada na matriz que se deseja inverter e ao final
+    do processo ela será a inversa
+
+    :param X: Matriz a ser invertida
+    :return: A inversa da matriz X
+    """
+    n = len(X)
+
+    # Faz uma cópia da matriz para evitar modificar o original
+    A = [[0 for _ in range(n)] for _ in range(n)]
+    for i in range(n):
+        for j in range(n):
+            A[i][j] = X[i][j]
+
+    # Concatena a matriz inversa na matriz original para fazer a eliminação de gauss-jordan
+    I = identity_matrix(n)
+    for i in range(n):
+        A[i] += I[i]
+
+    i = 0
+    for j in range(n):
+        # Verifica se existe algum valor não nulo abaixo da linha e coluna correntes
+        zero_sum, first_non_zero = check_for_all_zeros(A, i, j)
+
+        # Se só tem zeros, o algoritmo para aqui
+        if zero_sum == 0:
+            if j == n:
+                return A
+            print "Matrix é singular"
+            return A
+
+        # Se o pivot é zero mas tem um valor não nulo, troca as linhas
+        if first_non_zero != i:
+            A[first_non_zero], A[i] = A[i], A[first_non_zero]
+
+        # Divide A[i] por A[i][j] para fazer X[i][j] igual a 1
+        A[i] = [m / A[i][j] for m in A[i]]
+
+        # Reescala as outras linhas para fazer os valores abaixo de A[i][j] nulos
+        for q in range(n):
+            if q != i:
+                scaled_row = [A[q][j] * m for m in A[i]]
+                A[q] = [A[q][m] - scaled_row[m] for m in range(0, len(scaled_row))]
+
+        if i == n or j == n:
+            break
+        i += 1
+
+    # Retorna o lado direito da matriz montada no incio do algoritmo
+    for i in range(n):
+        A[i] = A[i][n:len(A[i])]
+
+    return A
 
 
 def upper_triangular_solver(A):
@@ -101,52 +230,48 @@ def gauss_solver(A, b):
     return upper_triangular_solver(A_b)
 
 
-def jacobi_approximation(A, b, x0):
-    n = len(A)
+def heder_iterative_method(A, x, b):
+    """
 
-    x_new = [x for x in x0]
-    x_old = [x for x in x0]
+    :param A:
+    :param x: Solução Inicial
+    :param b:
+    :return:
+    """
+    # r = b - A*x
+    A_x = mat_vec_mul(A, x)
+    r = vec_minus(b, A_x)
 
-    Ax = mat_vec_mul(A, x0)
-    r = vec_minus(b, Ax)
+    x_star = [xi for xi in x]
 
-    nr = 0
+    iter_count = 0
 
-    while abs(inf_norm(r)) > 10E-2 and nr < 1000:
-        for i in range(n):
-            t1, t2 = 0.0, 0.0
-            for j in range(0, i):
-                t1 += A[i][j] * x_old[j]
-            for j in range(i+1, n):
-                t2 += A[i][j] * x_old[j]
+    while inf_norm_vector(r) > 1E-2:
+        z = gauss_solver(A, r)
+        x_star = vec_plus(x_star, z)
+        A_x_star = mat_vec_mul(A, x_star)
+        r = vec_minus(b, A_x_star)
 
-            x_new[i] = (b[i] - t1 - t2) / A[i][i]
+        iter_count += 1
 
-        Ax = mat_vec_mul(A, x_new)
-        r = vec_minus(b, Ax)
-
-        x_old = x_new
-        nr += 1
-
-    return x_new, nr
+    return x_star, iter_count
 
 
 def main():
-    for n in range(3, 20):
-        #A = [[0 for _ in range(n)] for _ in range(n)]
-        #for i in range(0, n):
-        #    A[i][i] = 2.0
-
-        H = hilbert(n)
+    for n in range(12, 13):
+        H = hilbert_matrix(n)
         x = [1 for _ in range(n)]
         b = mat_vec_mul(H, x)
 
         x0 = gauss_solver(H, b)
-        x0p, n_iter = jacobi_approximation(H, b, x0)
+        x0p, n_iter = heder_iterative_method(H, x0, b)
 
-        dx = inf_norm(vec_minus(x0p, x))
+        dx = inf_norm_vector(vec_minus(x0p, x))
 
-        print "n: {n: <4} dx: {dx: .20f}   nr: {nr: < 4}   cond(H): {cond_H: <10}".format(n=n, dx=dx, nr=n_iter, cond_H='---')
+        H_inv = invert_matrix(H)
+        cond_H = inf_norm_matrix(H) * inf_norm_matrix(H_inv)
+
+        print "n: {n: <4} dx: {dx: .20f}   nr: {nr: < 4}   cond(H): {cond_H: <10}".format(n=n, dx=dx, nr=n_iter, cond_H=cond_H)
 
 
 if __name__ == '__main__':
