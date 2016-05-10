@@ -105,11 +105,47 @@ def filter_points():
     filtered_points_file.close()
 
 
-def kriding():
-    #open('/Users/tsabino/Desktop/teste.xyz', 'w')
+def kriging():
+    points_file = open('/Users/tsabino/Desktop/teste.xyz', 'r')
+    points = []
+    for point_entry in points_file.readli
+        points.append([float(point_data[0]), float(point_data[1]), float(point_data[2])])
+    points_file.close()nes():
+        point_data = point_entry.strip('\n').split()
+    np_points = np.array(points)
+
+    X = np_points[:, [0, 1]]
+    y = np_points[:, 2]
+
+    print 'Fitting data...'
+    gp = gaussian_process.GaussianProcess(theta0=2e-1, regr='quadratic', )
+    gp.fit(X, y)
+
+    x_min = np_points[:, 0].min()
+    x_max = np_points[:, 0].max()
+    y_min = np_points[:, 1].min()
+    y_max = np_points[:, 1].max()
+    z_min = np_points[:, 2].min()
+    z_max = np_points[:, 2].max()
+
+    x_size = x_max - x_min
+    y_size = y_max - y_min
+    z_size = z_max - z_min
+
+    points_to_predict = []
+    for x in np.linspace(x_min, x_max, 100):
+        for y in np.linspace(y_min, y_max, 100):
+            points_to_predict.append([x, y])
+
+    Z_predicted = gp.predict(points_to_predict)
+
+    dtm_file = open('/Users/tsabino/Desktop/dtm.xyz', 'w')
+    for i in xrange(len(points_to_predict)):
+        dtm_file.write(str(points_to_predict[i][0]) + ' ' + str(points_to_predict[i][1]) + ' ' + str(Z_predicted[i]) + '\n')
+    dtm_file.close()
 
 
 
 if __name__ == '__main__':
     #filter_points()
-    kriding()
+    kriging()
