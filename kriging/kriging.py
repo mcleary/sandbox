@@ -108,17 +108,18 @@ def filter_points():
 def kriging():
     points_file = open('/Users/tsabino/Desktop/teste.xyz', 'r')
     points = []
-    for point_entry in points_file.readli
-        points.append([float(point_data[0]), float(point_data[1]), float(point_data[2])])
-    points_file.close()nes():
+    for point_entry in points_file.readlines():
         point_data = point_entry.strip('\n').split()
+        points.append([float(point_data[0]), float(point_data[1]), float(point_data[2])])
+    points_file.close()
+
     np_points = np.array(points)
 
     X = np_points[:, [0, 1]]
     y = np_points[:, 2]
 
     print 'Fitting data...'
-    gp = gaussian_process.GaussianProcess(theta0=2e-1, regr='quadratic', )
+    gp = gaussian_process.GaussianProcess(theta0=2e-1, regr='quadratic', thetaL=2e-4, thetaU=3e-1)
     gp.fit(X, y)
 
     x_min = np_points[:, 0].min()
@@ -133,8 +134,8 @@ def kriging():
     z_size = z_max - z_min
 
     points_to_predict = []
-    for x in np.linspace(x_min, x_max, 100):
-        for y in np.linspace(y_min, y_max, 100):
+    for x in np.linspace(x_min, x_max, 1000):
+        for y in np.linspace(y_min, y_max, 1000):
             points_to_predict.append([x, y])
 
     Z_predicted = gp.predict(points_to_predict)
