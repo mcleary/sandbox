@@ -1,21 +1,82 @@
 import numpy as np
 from sklearn import gaussian_process
 import math
+import time
 
 
-def sklearn_example():
+class GridBlock:
+    def __init__(self, x_min, x_max, y_min, y_max):
+        self._x_min = x_min
+        self._x_max = x_max
+        self._y_min = y_min
+        self._y_max = y_max
 
-    def f(x):
-        return x * np.sin(x)
+        x_size = x_max - x_min
+        y_size = y_max - y_min
 
-    X = np.atleast_2d([1., 3., 5., 6., 7., 8.]).T
-    y = f(X).ravel()
-    x = np.atleast_2d(np.linspace(0, 10, 1000)).T
-    gp = gaussian_process.GaussianProcess(theta0=1e-2, thetaL=1e-4, thetaU=1e-1)
-    gp.fit(X, y)
-    y_pred, sigma2_pred = gp.predict(x, eval_MSE=True)
+        self._block_center = [self._x_min + x_size / 2.0, self._y_min + y_size / 2.0]
+        self._points = []
 
-    print y_pred
+    def contains(self, x, y):
+        return (x >= self._x_min) and (x < self._x_max) and (y >= self._y_min) and (y < self._y_max)
+
+    def add_point(self, x, y, z):
+        if self.contains(x, y):
+            self._points.append([x, y, z])
+
+    def add_point_no_check(self, x, y, z):
+        self._points.append([x, y, z])
+
+
+class Grid2D:
+    resolution = 0.25
+
+    def __init__(self, x_min, x_max, y_min, y_max):
+        self._x_min = x_min
+        self._x_max = x_max
+        self._y_min = y_min
+        self._y_max = y_max
+        self._x_size = int(math.floor((x_max - x_min) / self.resolution))
+        self._y_size = int(math.floor((y_max - y_min) / self.resolution))
+        self._total_blocks = self._x_size * self._y_size
+
+        self._grid_blocks = []
+
+        for x_idx in xrange(self._x_size):
+            for y_idx in xrange(self._y_size):
+                block_x_min = x_idx * self.resolution + x_min
+                block_x_max = block_x_min + self.resolution
+                block_y_min = y_idx * self.resolution + y_min
+                block_y_max = block_y_min + self.resolution
+
+                self._grid_blocks.append(GridBlock(block_x_min, block_x_max, block_y_min, block_y_max))
+
+    def find_block(self, x, y):
+        start_block = 0
+        end_block = len(self._grid_blocks) - 1
+
+
+    def add_points(self, points):
+
+        total_points = len(points)
+        current_progress = 0
+        current_point = 0
+
+        for point in points:
+            for block in self._grid_blocks:
+                x = point[0]
+                y = point[1]
+                z = point[2]
+                if block.contains(x, y):
+                    block.add_point_no_check(x, y, z)
+
+            progress = int((current_point / float(total_points)) * 100.0)
+            current_point += 1
+
+            if progress % 10 == 0:
+                if current_progress != progress:
+                    current_progress = progress
+                    print 'Adicionando pontos no grid ... {progress}'.format(progress=progress)
 
 
 def filter_points():
@@ -67,6 +128,8 @@ def filter_points():
     total_blocks = int(math.floor(grid_x_size)) * int(math.floor(grid_y_size))
     current_block = 0
 
+    start = time.clock()
+
     for x_grid_idx in xrange(0, int(math.floor(grid_x_size))):
         for y_grid_idx in xrange(0, int(math.floor(grid_y_size))):
             grid_block_x_min = x_grid_idx * grid_res + x_min
@@ -97,12 +160,60 @@ def filter_points():
             else:
                 filtered_points.append(grid_block_center)
 
+    end = time.clock()
+    print 'Time: ' + str(end - start)
+
 
     print 'Escrevendo arquivo de pontos filtrados..'
     filtered_points_file = open('/Users/tsabino/Desktop/teste.xyz', 'w')
     for p in filtered_points:
         filtered_points_file.write(str(p[0]) + ' ' + str(p[1]) + ' ' + str(p[2]) + '\n')
     filtered_points_file.close()
+
+
+def filter_points_v2():
+    xyz_file = open('/Users/tsabino/devel/mangroves-data/1/Arvore1-3leituras.xyz', 'r')
+
+    print 'Lendo arquivo ...'
+    xyz_contents = []
+    for xyz_line in xyz_file.readlines():
+        xyz_contents.append(xyz_line.strip('\n').strip('\r'))
+
+    xyz_file.close()
+
+    points = []
+
+    print 'Extraindo dados ...'
+    for xyz_entry in xyz_contents:
+        xyz_data = xyz_entry.split()
+        points.append([float(xyz_data[2]), float(xyz_data[3]), float(xyz_data[4])])
+
+    np_points = np.array(points)
+
+    x_min = np_points[:, 0].min()
+    x_max = np_points[:, 0].max()
+    y_min = np_points[:, 1].min()
+    y_max = np_points[:, 1].max()
+    z_min = np_points[:, 2].min()
+    z_max = np_points[:, 2].max()
+
+    X = np_points[:, 0]
+    Y = np_points[:, 1]
+    Z = np_points[:, 2]
+
+    z_min = Z.min()
+    Z = Z - z_min
+    np_points[:, 2] = Z
+
+    filtered_points = []
+
+    print 'Coletando pontos minimos...'
+    grid = Grid2D(x_min, x_max, y_min, y_max)
+
+    start = time.clock()
+    grid.add_points(np_points)
+    end = time.clock()
+    print 'Time: ' + str(end - start)
 
 
 def kriging():
@@ -133,9 +244,11 @@ def kriging():
     y_size = y_max - y_min
     z_size = z_max - z_min
 
+    grid_res = 0
+
     points_to_predict = []
-    for x in np.linspace(x_min, x_max, 1000):
-        for y in np.linspace(y_min, y_max, 1000):
+    for x in np.linspace(x_min + grid_res, x_max - grid_res, 100):
+        for y in np.linspace(y_min + grid_res, y_max - grid_res, 100):
             points_to_predict.append([x, y])
 
     Z_predicted = gp.predict(points_to_predict)
@@ -147,6 +260,9 @@ def kriging():
 
 
 
+
+
 if __name__ == '__main__':
     #filter_points()
-    kriging()
+    filter_points_v2()
+    #kriging()
