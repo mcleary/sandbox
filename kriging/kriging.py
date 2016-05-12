@@ -14,18 +14,18 @@ class GridBlock:
         x_size = x_max - x_min
         y_size = y_max - y_min
 
-        self._block_center = [self._x_min + x_size / 2.0, self._y_min + y_size / 2.0]
-        self._points = []
+        self.center = [self._x_min + x_size / 2.0, self._y_min + y_size / 2.0]
+        self.points = []
 
     def contains(self, x, y):
         return (x >= self._x_min) and (x < self._x_max) and (y >= self._y_min) and (y < self._y_max)
 
     def add_point(self, x, y, z):
         if self.contains(x, y):
-            self._points.append([x, y, z])
+            self.points.append([x, y, z])
 
     def add_point_no_check(self, x, y, z):
-        self._points.append([x, y, z])
+        self.points.append([x, y, z])
 
 
 class Grid2D:
@@ -40,7 +40,7 @@ class Grid2D:
         self._y_size = int(math.floor((y_max - y_min) / self.resolution))
         self._total_blocks = self._x_size * self._y_size
 
-        self._grid_blocks = []
+        self.grid_blocks = []
 
         for x_idx in xrange(self._x_size):
             for y_idx in xrange(self._y_size):
@@ -49,21 +49,19 @@ class Grid2D:
                 block_y_min = y_idx * self.resolution + y_min
                 block_y_max = block_y_min + self.resolution
 
-                self._grid_blocks.append(GridBlock(block_x_min, block_x_max, block_y_min, block_y_max))
+                self.grid_blocks.append(GridBlock(block_x_min, block_x_max, block_y_min, block_y_max))
 
     def find_block(self, x, y):
         start_block = 0
-        end_block = len(self._grid_blocks) - 1
-
+        end_block = len(self.grid_blocks) - 1
 
     def add_points(self, points):
-
         total_points = len(points)
         current_progress = 0
         current_point = 0
 
         for point in points:
-            for block in self._grid_blocks:
+            for block in self.grid_blocks:
                 x = point[0]
                 y = point[1]
                 z = point[2]
@@ -77,6 +75,18 @@ class Grid2D:
                 if current_progress != progress:
                     current_progress = progress
                     print 'Adicionando pontos no grid ... {progress}'.format(progress=progress)
+
+
+def generate_dummy_grid():
+    grid_size = 20
+    grid = Grid2D(0.0, grid_size, 0.0, grid_size)
+    xyz_file = open('D:\\Dropbox\\Doutorado\\arvores\\dummy_grid.xyz', 'w')
+    for block in grid.grid_blocks:
+        x = block.center[0]
+        y = block.center[1]
+        z = math.sin(x) + math.cos(y) * 1.5
+        xyz_file.write(str(x) + ' ' + str(y) + ' ' + str(z) + '\n')
+    xyz_file.close()
 
 
 def filter_points():
@@ -217,7 +227,10 @@ def filter_points_v2():
 
 
 def kriging():
-    points_file = open('/Users/tsabino/Desktop/teste.xyz', 'r')
+    #points_file = open('/Users/tsabino/Desktop/teste.xyz', 'r')
+    points_file = open('D:\\Dropbox\\Doutorado\\arvores\\terrain_grid.xyz', 'r')
+    #points_file = open('D:\\Dropbox\\Doutorado\\arvores\\dummy_grid.xyz', 'r')
+
     points = []
     for point_entry in points_file.readlines():
         point_data = point_entry.strip('\n').split()
@@ -230,7 +243,7 @@ def kriging():
     y = np_points[:, 2]
 
     print 'Fitting data...'
-    gp = gaussian_process.GaussianProcess(theta0=2e-1, regr='quadratic', thetaL=2e-4, thetaU=3e-1)
+    gp = gaussian_process.GaussianProcess(theta0=20.0)
     gp.fit(X, y)
 
     x_min = np_points[:, 0].min()
@@ -247,22 +260,23 @@ def kriging():
     grid_res = 0
 
     points_to_predict = []
-    for x in np.linspace(x_min + grid_res, x_max - grid_res, 100):
-        for y in np.linspace(y_min + grid_res, y_max - grid_res, 100):
+    for x in np.linspace(x_min, x_max, 200):
+        for y in np.linspace(y_min, y_max, 200):
+            points_to_predict.append([x, y])
             points_to_predict.append([x, y])
 
+    print 'Predicting...'
     Z_predicted = gp.predict(points_to_predict)
 
-    dtm_file = open('/Users/tsabino/Desktop/dtm.xyz', 'w')
+    #dtm_file = open('/Users/tsabino/Desktop/dtm.xyz', 'w')
+    dtm_file = open('D:\\Dropbox\\Doutorado\\arvores\\dtm2.xyz', 'w')
     for i in xrange(len(points_to_predict)):
         dtm_file.write(str(points_to_predict[i][0]) + ' ' + str(points_to_predict[i][1]) + ' ' + str(Z_predicted[i]) + '\n')
     dtm_file.close()
 
 
-
-
-
 if __name__ == '__main__':
+    #generate_dummy_grid()
     #filter_points()
-    filter_points_v2()
-    #kriging()
+    #filter_points_v2()
+    kriging()
