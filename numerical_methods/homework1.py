@@ -3,7 +3,6 @@
 
 import sys
 
-
 def print_matrix(M):
     print '-' * len(M) * 12     # Linha Horizontal
     for line in M:
@@ -42,19 +41,11 @@ def mat_vec_mul(A, v):
 
 
 def vec_plus(x, y):
-    n = len(x)
-    dx = [0 for _ in range(n)]
-    for i in range(n):
-        dx[i] = x[i] + y[i]
-    return dx
+    return [x[i] + y[i] for i in range(len(x))]
 
 
 def vec_minus(x, y):
-    n = len(x)
-    dx = [0 for _ in range(n)]
-    for i in range(n):
-        dx[i] = x[i] - y[i]
-    return dx
+    return [x[i] - y[i] for i in range(len(x))]
 
 
 def inf_norm_vector(x):
@@ -280,29 +271,36 @@ def gauss_solver(A, b):
                     A_b[k][j] += m * A_b[i][j]
 
     # resolve o sistema triangular superior Ax=b
-    return upper_triangular_solver(A_b)
+    new_A = [[0 for _ in range(n)] for _ in range(n)]
+    for i in range(n):
+        for j in range(n):
+            new_A[i][j] = A_b[i][j]
+    new_b = [0 for _ in range(n)]
+    for i in range(n):
+        new_b[i] = A_b[n-1][i]
+    return upper_triangular_solver(new_A, new_b)
 
 
-def heder_iterative_method(A, x, b):
+def heder_iterative_method(H, x, b):
     """
 
-    :param A:
+    :param H:
     :param x: Solução Inicial
     :param b:
     :return:
     """
-    # r = b - A*x
-    A_x = mat_vec_mul(A, x)
-    r = vec_minus(b, A_x)
+    # r = b - H*x
+    H_x = mat_vec_mul(H, x)
+    r = vec_minus(b, H_x)
 
     x_star = [xi for xi in x]
 
     iter_count = 0
 
-    while inf_norm_vector(r) > 1E-2:
-        z = ldlt_solver(A, r)
+    while inf_norm_vector(r) > 1E-5 and iter_count <= 50:
+        z = gauss_solver(H, r)
         x_star = vec_plus(x_star, z)
-        A_x_star = mat_vec_mul(A, x_star)
+        A_x_star = mat_vec_mul(H, x_star)
         r = vec_minus(b, A_x_star)
 
         iter_count += 1
@@ -311,9 +309,10 @@ def heder_iterative_method(A, x, b):
 
 
 def main():
+    # Resolve o sistema linear
     for n in range(2, 13):
         H = hilbert_matrix(n)
-        x = [1 for _ in range(n)]
+        x = [1000 for _ in range(n)]
         b = mat_vec_mul(H, x)
 
         x0 = ldlt_solver(H, b)
@@ -321,11 +320,22 @@ def main():
 
         dx = inf_norm_vector(vec_minus(x_iter, x))
 
-        H_inv = invert_matrix(H)
-        cond_H = inf_norm_matrix(H) * inf_norm_matrix(H_inv)
         x_iter_norm = inf_norm_vector(x_iter)
 
-        print "n: {n: <4} dx: {dx: .20f}   dx_ter: {x_iter: .20f}  nr: {nr: < 4}  cond(H): {cond_H: .20f}".format(n=n, dx=dx, x_iter=x_iter_norm, nr=n_iter, cond_H=cond_H)
+        print "n: {n: <4} dx: {dx: .20f}   dx_iter: {x_iter: .20f}  nr: {nr: < 4}".format(n=n, dx=dx, x_iter=x_iter_norm, nr=n_iter)
+
+    print
+    print "------------------------"
+    print
+
+    # Calcula o número de condicionamento da matriz de Hilbert
+    for n in range(2, 21):
+        H = hilbert_matrix(n)
+        H_inv = invert_matrix(H)
+
+        cond_H = inf_norm_matrix(H) * inf_norm_matrix(H_inv)
+
+        print "n: {n: <4} cond(H): {cond_H: .20f}".format(n=n, cond_H=cond_H)
 
 
 if __name__ == '__main__':
