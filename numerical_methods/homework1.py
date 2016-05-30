@@ -12,15 +12,6 @@ def print_matrix(M):
     print '-' * len(M) * 12     # Linha Horizontal
 
 
-def mat_scalar_mul(A, s):
-    n = len(A)
-    As = [[0 for _ in range(n)] for _ in range(n)]
-    for i in range(n):
-        for j in range(n):
-            As[i][j] = A[i][j] * s
-    return As
-
-
 def mat_mul(A, B):
     n = len(A)
     C = [[0 for _ in range(n)] for _ in range(n)]
@@ -116,7 +107,7 @@ def check_for_all_zeros(X, i, j):
 
 def invert_matrix(X):
     """
-    Inverte uma matriz usando a eliminassão de gauss-jordan
+    Inverte uma matriz usando a eliminação de gauss-jordan
     A matriz é colocada na forma de echelon
 
     A matriz identidade é concatenada na matriz que se deseja inverter e ao final
@@ -309,6 +300,8 @@ def heder_iterative_method(H, x, b):
 
 
 def main():
+    print_latex_table = False
+
     # Resolve o sistema linear
     for n in range(2, 13):
         H = hilbert_matrix(n)
@@ -322,7 +315,16 @@ def main():
 
         x_iter_norm = inf_norm_vector(x_iter)
 
-        print "n: {n: <4} dx: {dx: .20f}   dx_iter: {x_iter: .20f}  nr: {nr: < 4}".format(n=n, dx=dx, x_iter=x_iter_norm, nr=n_iter)
+        if not print_latex_table:
+            print "n: {n: <4} dx: {dx: .20f}   dx_iter: {x_iter: .20f}  nr: {nr: < 4}".format(n=n,
+                                                                                              dx=dx,
+                                                                                              x_iter=x_iter_norm,
+                                                                                              nr=n_iter)
+        else:
+            print "{n: <4} & {dx: .20f} & {x_iter: .20f} & {nr: < 4} \\\\".format(n=n,
+                                                                             dx=dx,
+                                                                             x_iter=x_iter_norm,
+                                                                             nr=n_iter)
 
     print
     print "------------------------"
@@ -335,7 +337,10 @@ def main():
 
         cond_H = inf_norm_matrix(H) * inf_norm_matrix(H_inv)
 
-        print "n: {n: <4} cond(H): {cond_H: .20f}".format(n=n, cond_H=cond_H)
+        if not print_latex_table:
+            print "n: {n: <4} cond(H): {cond_H: .20f}".format(n=n, cond_H=cond_H)
+        else:
+            print '{n: <4} & {cond_H: .20f} \\\\'.format(n=n, cond_H=cond_H)
 
 
 if __name__ == '__main__':
