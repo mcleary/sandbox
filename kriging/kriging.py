@@ -1,7 +1,17 @@
-import numpy as np
-from sklearn import gaussian_process
+import os
 import math
 import time
+import numpy as np
+from sklearn import gaussian_process
+
+
+base_path = '/Users/tsabino/Dropbox/doutorado/arvores/kriging'
+
+forest_filepath = os.path.join(base_path, 'floresta-1leitura.xyz')
+#forest_filepath = os.path.join(base_path, 'Arvore1-2leituras.xyz')
+grid_filepath = os.path.join(base_path, 'floresta-1leitura-grid.xyz')
+dtm_filepath = os.path.join(base_path, 'dtm.xyz')
+dummy_grid_filepath = os.path.join(base_path, 'grid.xyz')
 
 
 class GridBlock:
@@ -78,21 +88,21 @@ class Grid2D:
 
 
 def generate_dummy_grid():
-    grid_size = 20
+    grid_size = 50
     grid = Grid2D(0.0, grid_size, 0.0, grid_size)
-    xyz_file = open('D:\\Dropbox\\Doutorado\\arvores\\dummy_grid.xyz', 'w')
+    grid_file = open(dummy_grid_filepath, 'w')
     for block in grid.grid_blocks:
         x = block.center[0]
         y = block.center[1]
         z = math.sin(x) + math.cos(y) * 1.5
-        xyz_file.write(str(x) + ' ' + str(y) + ' ' + str(z) + '\n')
-    xyz_file.close()
+        grid_file.write(str(x) + ' ' + str(y) + ' ' + str(z) + '\n')
+    grid_file.close()
 
 
-def filter_points():
-    xyz_file = open('/Users/tsabino/devel/mangroves-data/1/Arvore1-3leituras.xyz', 'r')
+def filter_points_v1():
+    xyz_file = open(forest_filepath, 'r')
 
-    print 'Lendo arquivo ...'
+    print 'Lendo arquivo ' + forest_filepath + ' ...'
     xyz_contents = []
     for xyz_line in xyz_file.readlines():
         xyz_contents.append(xyz_line.strip('\n').strip('\r'))
@@ -104,7 +114,11 @@ def filter_points():
     print 'Extraindo dados ...'
     for xyz_entry in xyz_contents:
         xyz_data = xyz_entry.split()
-        points.append([float(xyz_data[2]), float(xyz_data[3]), float(xyz_data[4])])
+
+        if len(xyz_data) == 3:
+            points.append([float(xyz_data[0]), float(xyz_data[1]), float(xyz_data[2])])
+        else:
+            points.append([float(xyz_data[2]), float(xyz_data[3]), float(xyz_data[4])])
 
     np_points = np.array(points)
 
@@ -153,9 +167,12 @@ def filter_points():
 
             grid_block_points = []
 
-            for point in np_points:
+            for point in points:
                 if (point[0] >= grid_block_x_min) and (point[0] < grid_block_x_max) and (point[1] >= grid_block_y_min) and (point[1] < grid_block_y_max):
                     grid_block_points.append(point)
+
+            for point in grid_block_points:
+                points.remove(point)
 
             if len(grid_block_points) > 0:
                 np_grid_block = np.array(grid_block_points)
@@ -173,16 +190,15 @@ def filter_points():
     end = time.clock()
     print 'Time: ' + str(end - start)
 
-
     print 'Escrevendo arquivo de pontos filtrados..'
-    filtered_points_file = open('/Users/tsabino/Desktop/teste.xyz', 'w')
+    filtered_points_file = open(grid_filepath, 'w')
     for p in filtered_points:
         filtered_points_file.write(str(p[0]) + ' ' + str(p[1]) + ' ' + str(p[2]) + '\n')
     filtered_points_file.close()
 
 
 def filter_points_v2():
-    xyz_file = open('/Users/tsabino/devel/mangroves-data/1/Arvore1-3leituras.xyz', 'r')
+    xyz_file = open(forest_filepath, 'r')
 
     print 'Lendo arquivo ...'
     xyz_contents = []
@@ -227,9 +243,7 @@ def filter_points_v2():
 
 
 def kriging():
-    #points_file = open('/Users/tsabino/Desktop/teste.xyz', 'r')
-    points_file = open('D:\\Dropbox\\Doutorado\\arvores\\terrain_grid.xyz', 'r')
-    #points_file = open('D:\\Dropbox\\Doutorado\\arvores\\dummy_grid.xyz', 'r')
+    points_file = open(grid_filepath, 'r')
 
     points = []
     for point_entry in points_file.readlines():
@@ -243,7 +257,7 @@ def kriging():
     y = np_points[:, 2]
 
     print 'Fitting data...'
-    gp = gaussian_process.GaussianProcess(theta0=20.0)
+    gp = gaussian_process.GaussianProcess(theta0=100.0)
     gp.fit(X, y)
 
     x_min = np_points[:, 0].min()
@@ -253,23 +267,17 @@ def kriging():
     z_min = np_points[:, 2].min()
     z_max = np_points[:, 2].max()
 
-    x_size = x_max - x_min
-    y_size = y_max - y_min
-    z_size = z_max - z_min
-
-    grid_res = 0
-
     points_to_predict = []
     for x in np.linspace(x_min, x_max, 200):
         for y in np.linspace(y_min, y_max, 200):
             points_to_predict.append([x, y])
             points_to_predict.append([x, y])
 
-    print 'Predicting...'
+    print 'Predicting ...'
     Z_predicted = gp.predict(points_to_predict)
 
-    #dtm_file = open('/Users/tsabino/Desktop/dtm.xyz', 'w')
-    dtm_file = open('D:\\Dropbox\\Doutorado\\arvores\\dtm2.xyz', 'w')
+    print 'Writing results ...'
+    dtm_file = open(dtm_filepath, 'w')
     for i in xrange(len(points_to_predict)):
         dtm_file.write(str(points_to_predict[i][0]) + ' ' + str(points_to_predict[i][1]) + ' ' + str(Z_predicted[i]) + '\n')
     dtm_file.close()
@@ -277,6 +285,6 @@ def kriging():
 
 if __name__ == '__main__':
     #generate_dummy_grid()
-    #filter_points()
+    #filter_points_v1()
     #filter_points_v2()
     kriging()
