@@ -90,7 +90,7 @@ def main():
     x3 = x_old[5]
 
     def p(x):
-        return 1 + x + 3*x**2 + x**3 + x**4 + x**5 + x**6 + x**7
+        return 1 + x + 3*x**2 + x**3 + x**4 + x**5
 
     print p(-1.0), p(1.0)
 
