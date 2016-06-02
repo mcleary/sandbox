@@ -78,9 +78,24 @@ def main():
         tol = np.linalg.norm(x_new - x_old)
         x_old = x_new
         print tol
-        if tol < 1e-8:
+        if tol < 1e-15:
             print iter, x_new
             break
+
+    c1 = x_old[0]
+    c2 = x_old[1]
+    c3 = x_old[2]
+    c4 = x_old[3]
+    x2 = x_old[4]
+    x3 = x_old[5]
+
+    def p(x):
+        return 1 + x + 3*x**2 + x**3 + x**4 + x**5 + x**6 + x**7
+
+    print p(-1.0), p(1.0)
+
+    print c1*p(-1.0) + c2*p(x2) + c3*p(x3) + c4*p(1.0)
+
 
 if __name__ == '__main__':
     main()
