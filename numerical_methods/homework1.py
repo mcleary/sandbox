@@ -205,7 +205,7 @@ def lower_triangular_solver(L, b):
 def ldlt_solver(A, b):
     n = len(A)
     L = identity_matrix(n)
-    D = [0 for _ in range(n)] # Matriz D na forma de um vetor
+    D = [0 for _ in range(n)]  # Matriz D na forma de um vetor
 
     # Decomposição LDLT
     for j in range(n):
@@ -271,15 +271,9 @@ def gauss_solver(A, b):
         new_b[i] = A_b[n-1][i]
     return upper_triangular_solver(new_A, new_b)
 
+import numpy as np
 
 def heder_iterative_method(H, x, b):
-    """
-
-    :param H:
-    :param x: Solução Inicial
-    :param b:
-    :return:
-    """
     # r = b - H*x
     H_x = mat_vec_mul(H, x)
     r = vec_minus(b, H_x)
