@@ -61,15 +61,15 @@ def mmq_2():
     sum_xfi = x.dot(fi)
     sum_xgi = x.dot(gi)
 
-    A = [[m,     sum_x,  0],
-         [sum_x, sum_x2, 0],
-         [0,     sum_x,  m]]
-    b = [sum_fi, sum_xfi, sum_gi]
-
     # A = [[m,     sum_x,  0],
     #      [sum_x, sum_x2, 0],
-    #      [0,     sum_x2,  sum_x]]
-    # b = [sum_fi, sum_xfi, sum_xgi]
+    #      [0,     sum_x,  m]]
+    # b = [sum_fi, sum_xfi, sum_gi]
+
+    A = [[m, sum_x, 0],
+         [sum_x, sum_x2, 0],
+         [0, sum_x2, sum_x]]
+    b = [sum_fi, sum_xfi, sum_xgi]
 
     z = np.linalg.solve(A, b)
     print A, b, z
@@ -90,6 +90,19 @@ def mmq_2():
     for i in range(len(x_new)):
         y1_new[i] = fx(x_new[i])
         y2_new[i] = gx(x_new[i])
+
+    y1_err = 0
+    y2_err = 0
+    for i in range(len(x)):
+        xi = x[i]
+        y1i = fi[i]
+        y2i = gi[i]
+        y1_err += abs(fx(xi) - y1i)
+        y2_err += abs(gx(xi) - y2i)
+
+    print 'Erro f: ' + str(y1_err)
+    print 'Erro g: ' + str(y2_err)
+    print 'Erro total: ' + str(y1_err + y2_err)
 
     plt.figure()
     plt.plot(x, fi, 'sr', x, gi, 'sb', x_new, y1_new, 'g', x_new, y2_new, 'c')
