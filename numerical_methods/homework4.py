@@ -2,6 +2,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 
+
 def mmq_1():
     x = np.array([0, 1, 2, 3, 4, 5, 6])
     y = np.array([32, 47, 65, 92, 132, 190, 275])
@@ -109,6 +110,20 @@ def mmq_2():
     plt.axis([x.min(), x.max(), fi.min(), fi.max()])
     plt.show()
 
+
+def mmq_3():
+    x = np.array([0, 1, 2, 6, 7])
+    y = np.array([0, 0, 1, 2, 3])
+
+    x1 = np.arange(x.min() - 1, x.max() + 1, 0.01)
+
+    plt.figure()
+    m = 2.0/5.0
+    plt.plot(x, y, 'sr', x1, m*x1 + 1.0/5.0, 'c', x1, m * x1 - m, 'c', x1, m*x1 - 1.0/10.0, 'b')
+    plt.show()
+
 if __name__ == '__main__':
     # mmq_1()
-    mmq_2()
+    # mmq_2()
+    # mmq_3()
+    pass
