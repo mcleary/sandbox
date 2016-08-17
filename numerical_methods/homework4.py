@@ -123,7 +123,7 @@ def mmq_3():
     plt.show()
 
 if __name__ == '__main__':
-    # mmq_1()
+    mmq_1()
     # mmq_2()
     # mmq_3()
     pass

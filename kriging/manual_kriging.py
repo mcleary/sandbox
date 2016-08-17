@@ -1,6 +1,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import math
 import sys
 from manual_kriging_data import generate_data
@@ -71,8 +72,6 @@ def semi_variogram(data):
     semi_var = {}
     distances_matrix = dist_matrix(data)
 
-    # x = data[:, 0]
-    # y = data[:, 1]
     z = data[:, 2]
 
     for i in xrange(len(distances_matrix)):
@@ -155,6 +154,17 @@ def sphermodel(h, nugget, range, sill):
     return (sill-nugget) * (1.5 * (h / range) - 0.5 * math.pow(h / range, 3)) + nugget
 
 
+def expmodel(h, nugget, range, sill, a):
+    return (sill-nugget) * (1 - math.exp(-h/(range*a))) + nugget
+
+
+def gaussmodel(h, nugget, range, sill, a):
+    if h > range:
+        return nugget
+
+    return (sill-nugget) * (1 - math.exp(-(pow(h, 2))/(pow(range, 2)*a))) * nugget
+
+
 def sphere_covar(dist, nugget, sill, range):
     n = len(dist)
 
@@ -173,48 +183,148 @@ def sphere_covar(dist, nugget, sill, range):
                 covar[i][j] = sphermodel(dist_i_j, nugget, range, sill)
 
 
-# spher.covar <- function(dist, nugget, sill, range) {
-#     sigma <- sill + nugget
-#     # Covariance(h) = Sigma + Gamma(h)
-#     covar <- matrix(0, nrow=nrow(dist), ncol=ncol(dist))
-#     for (i in 1:nrow(covar)) {
-#         for (j in 1:ncol(covar)) {
-#             if (dist[i,j] > range)
-#             covar[i,j] <- 0
-#         else if (dist[i,j] == 0)
-#             covar[i,j] <- sigma
-#             else covar[i,j] <- sigma - (nugget + (sigma - nugget) *
-#                         (((3*dist[i,j])/(2*range)) - ((dist[i,j]^3)/(2*range^3))))
-#         }
-#     }
-#     return(covar)
-# }
+def linear_model_fit(x, y):
+    mean_y = mean(y)
+    mean_x = mean(x)
+
+    sum1 = 0.0
+    sum2 = 0.0
+    for i in xrange(len(x)):
+        sum1 += (x[i] - mean_x) * (y[i] - mean_y)
+        sum2 += (x[i] - mean_x)**2
+
+    b = sum1 / sum2
+    a = mean_y - b * mean_x
+
+    return a, b
+
+
+def krig_fit(data):
+    semi_var = np.array(semi_variogram_lags(data, lags=20))
+
+    h_values = semi_var[:, 0]
+    semi_var_values = semi_var[:, 1]
+
+    lm_a, lm_b = linear_model_fit(h_values, semi_var_values)
+
+    nugget = lm_a
+    range = h_values.max()
+    sill = nugget + lm_b * range
+
+    distances = np.array(dist_matrix(data))
+
+    n = len(data)
+    a = np.ones((n+1, n+1), np.float)
+
+    a[n, n] = 0.0
+
+    for i in xrange(n):
+        for j in xrange(n):
+            dist_i_j = distances[i, j]
+            a[i, j] = sphermodel(dist_i_j, nugget, range, sill)
+
+    return {
+        'A': a,
+        'nugget': nugget,
+        'range': range,
+        'sill': sill
+    }
+
+
+def krig_pred(data, x_pred, y_pred, kriging_model):
+    A = kriging_model['A']
+    nugget = kriging_model['nugget']
+    sill = kriging_model['sill']
+    range = kriging_model['range']
+    inv_A = np.linalg.inv(A)
+
+    x = data[:, 0]
+    y = data[:, 1]
+    z = data[:, 2]
+
+    n = len(z)
+
+    R = [0 for _ in xrange(n+1)]
+
+    for j in xrange(n):
+        xdist = dist([x[j], y[j]], [x_pred, y_pred])
+        R[j] = sphermodel(xdist, nugget, range, sill)
+    R[n] = 1
+
+    invXR = inv_A.dot(R)
+    z = np.append(z, 1)
+    pred = z.transpose().dot(invXR)
+
+    return pred
 
 
 def main():
-    raw_data = generate_data(1)
+    raw_data = generate_data(3)
 
-    print np.cov(raw_data, rowvar=0)
+    x = raw_data[:, 0]
+    y = raw_data[:, 1]
+    z = raw_data[:, 2]
+
+    # grid_x = np.arange(x.min(), x.max(), 2)
+    # grid_y = np.arange(y.min(), y.max(), 2)
+
+    grid_x = np.linspace(x.min(), x.max(), 10)
+    grid_y = np.linspace(y.min(), y.max(), 10)
+    grid_z = np.zeros(10)
+    ng = len(grid_x)
+
+    kriging_model = krig_fit(raw_data)
+
+    for i in xrange(ng):
+        x_pred = grid_x[i]
+        y_pred = grid_y[i]
+        grid_z[i] = krig_pred(raw_data, x_pred, y_pred, kriging_model)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(x, y, z, c='r')
+    # ax.scatter(x_pred, y_pred, z_pred, c='g')
+    ax.scatter(grid_x, grid_y, grid_z, c='g')
+    plt.show()
+
+    return
 
     # print_matrix(cov_matrix(raw_data))
     # print_matrix(dist_matrix(raw_data))
 
     # semi_var = np.array(semi_variogram(raw_data))
     semi_var = np.array(semi_variogram_lags(raw_data, lags=10))
-    print semi_var
 
     h_values = semi_var[:, 0]
     semi_var_values = semi_var[:, 1]
 
+    lm_a, lm_b = linear_model_fit(h_values, semi_var_values)
+
+    my_nugget = lm_a
+    my_range = h_values.max()
+    my_sill = my_nugget + lm_b * my_range
+
+    print my_nugget, my_range, my_sill
+
     print h_values
     print semi_var_values
 
-    # model_x = np.arange(0, h_values.max(), 0.1)
+    model_x = np.arange(0, h_values.max(), 0.1)
     # nugget = 1.242169
     # sill = 1.217841
     # range = 18.95621
-    # model_y = [sphermodel(x, nugget, range, sill) for x in model_x]
-    # plt.plot(model_x, model_y, 'b-')
+    nugget = my_nugget
+    sill = my_sill
+    range = my_range
+    a = 1.0 / 3.0
+    model_y = [sphermodel(x, nugget, range, sill) for x in model_x]
+    model_y1 = [gaussmodel(x, nugget, range, sill, a) for x in model_x]
+    model_y2 = [expmodel(x, nugget, range, sill, a) for x in model_x]
+    model_y3 = [-0.001283 * x + 1.242169 for x in model_x]
+    plt.plot(model_x, model_y, 'b-')
+    # plt.plot(model_x, model_y1, 'g-')
+    # plt.plot(model_x, model_y2, 'g-')
+    plt.plot(model_x, model_y3, 'r-')
 
     plt.plot(h_values, semi_var_values, 'ro')
     plt.axis([0.0, h_values.max(), 0, semi_var_values.max()])
