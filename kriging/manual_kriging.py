@@ -200,7 +200,7 @@ def linear_model_fit(x, y):
 
 
 def krig_fit(data):
-    semi_var = np.array(semi_variogram_lags(data, lags=20))
+    semi_var = np.array(semi_variogram_lags(data, lags=50))
 
     h_values = semi_var[:, 0]
     semi_var_values = semi_var[:, 1]
@@ -265,20 +265,26 @@ def main():
     y = raw_data[:, 1]
     z = raw_data[:, 2]
 
-    # grid_x = np.arange(x.min(), x.max(), 2)
-    # grid_y = np.arange(y.min(), y.max(), 2)
+    ng = 30
 
-    grid_x = np.linspace(x.min(), x.max(), 10)
-    grid_y = np.linspace(y.min(), y.max(), 10)
-    grid_z = np.zeros(10)
-    ng = len(grid_x)
+    grid = []
+
+    grid_dx = abs(x.max() - x.min()) / ng
+    grid_dy = abs(y.max() - y.min()) / ng
 
     kriging_model = krig_fit(raw_data)
 
     for i in xrange(ng):
-        x_pred = grid_x[i]
-        y_pred = grid_y[i]
-        grid_z[i] = krig_pred(raw_data, x_pred, y_pred, kriging_model)
+        for j in xrange(ng):
+            grid_x = x.min() + i * grid_dx
+            grid_y = y.min() + j * grid_dy
+            grid_z = krig_pred(raw_data, grid_x, grid_y, kriging_model)
+            grid.append([grid_x, grid_y, grid_z])
+
+    grid = np.array(grid)
+    grid_x = grid[:, 0]
+    grid_y = grid[:, 1]
+    grid_z = grid[:, 2]
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
