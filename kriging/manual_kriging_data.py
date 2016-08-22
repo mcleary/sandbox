@@ -55,3 +55,27 @@ def generate_data(data_index):
             raw_data.append([x[i], y[i], z[i]])
 
         return np.array(raw_data)
+
+    if data_index == 4:
+        filepath = '/Users/mcleary/Desktop/mpi-dtm2.xyz'
+        xyz_file = open(filepath, 'r')
+
+        print 'Lendo arquivo ' + filepath + ' ...'
+        xyz_contents = []
+        for xyz_line in xyz_file.readlines():
+            xyz_contents.append(xyz_line.strip('\n').strip('\r'))
+
+        xyz_file.close()
+
+        points = []
+
+        print 'Extraindo dados ...'
+        for xyz_entry in xyz_contents:
+            xyz_data = xyz_entry.split()
+
+            if len(xyz_data) == 3:
+                points.append([float(xyz_data[0]), float(xyz_data[1]), float(xyz_data[2])])
+            else:
+                points.append([float(xyz_data[2]), float(xyz_data[3]), float(xyz_data[4])])
+
+        return np.array(points)

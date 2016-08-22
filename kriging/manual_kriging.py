@@ -7,6 +7,37 @@ import sys
 from manual_kriging_data import generate_data
 
 
+def dist(p, q):
+    return math.sqrt((p[0] - q[0])**2 + (p[1] - q[1])**2)
+
+
+class DistancesMatrix:
+    distances_matrix = []
+
+    def __init__(self, data):
+        number_of_points = len(data)
+
+        for i in xrange(number_of_points):
+            distances = []
+
+            print str(i) + ' of ' + str(number_of_points - 1)
+
+            for j in xrange(0, i):
+                dist_i_j = dist(data[i], data[j])
+                distances.append(dist_i_j)
+
+            self.distances_matrix.append(distances)
+
+    def distance(self, i, j):
+        if i == j:
+            return 0.0
+
+        if j > i:
+            i, j = j, i
+
+        return self.distances_matrix[i][j]
+
+
 def print_matrix(M):
     print '-' * len(M) * 12     # Linha Horizontal
     for line in M:
@@ -14,10 +45,6 @@ def print_matrix(M):
             sys.stdout.write('{elem: .8f} '.format(elem=elem))
         print
     print '-' * len(M) * 12     # Linha Horizontal
-
-
-def dist(p, q):
-    return math.sqrt((p[0] - q[0])**2 + (p[1] - q[1])**2)
 
 
 def dist_matrix(m):
@@ -100,17 +127,13 @@ def semi_variogram(data):
     return new_semi_var
 
 
-def semi_variogram_lags(data, lags=10):
+def semi_variogram_lags(data, lag_count=10):
     semi_var = {}
 
-    for lag in xrange(1, lags):
-        semi_var[lag] = {
-            'dist': [],
-            'semivar': []
-        }
-
-    distances_matrix = dist_matrix(data)
-    number_of_points = len(distances_matrix)
+    # distances_matrix = dist_matrix(data)
+    # number_of_points = len(distances_matrix)
+    distances_matrix = DistancesMatrix(data)
+    number_of_points = len(data)
 
     x = data[:, 0]
     y = data[:, 1]
@@ -118,18 +141,32 @@ def semi_variogram_lags(data, lags=10):
 
     cutoff = math.sqrt((x.max() - x.min())**2 + (y.max() - y.min())**2) / 3.0
 
-    for lag in xrange(1, lags):
+    lags = []
+    for lag_index in xrange(lag_count):
+        lags.append(
+            {
+                'range': [(lag_index - 1) * cutoff / lag_count, lag_index * cutoff / lag_count],
+                'semivardata': {
+                    'dist': [],
+                    'values': []
+                }
+            }
+        )
 
-        for i in xrange(number_of_points):
-            for j in xrange(number_of_points):
-                dist_i_j = distances_matrix[i][j]
+    for i in xrange(number_of_points):
+        print i
 
-                lag_range = [(lag - 1) * cutoff / lags, lag * cutoff / lags]
+        for j in xrange(i, number_of_points):
+            dist_i_j = distances_matrix.distance(i, j)
+
+            for lag in lags:
+                lag_range = lag['range']
 
                 if lag_range[0] < dist_i_j < lag_range[1]:
                     semi_var_value = (z[i] - z[j])**2
-                    semi_var[lag]['dist'].append(dist_i_j)
-                    semi_var[lag]['semivar'].append(semi_var_value)
+
+                    lag['semivardata']['dist'].append(dist_i_j)
+                    lag['semivardata']['semivar'].append(dist_i_j)
 
     new_semi_var = []
     for lag in semi_var.keys():
@@ -200,7 +237,7 @@ def linear_model_fit(x, y):
 
 
 def krig_fit(data):
-    semi_var = np.array(semi_variogram_lags(data, lags=50))
+    semi_var = np.array(semi_variogram_lags(data, lags=10))
 
     h_values = semi_var[:, 0]
     semi_var_values = semi_var[:, 1]
@@ -259,7 +296,7 @@ def krig_pred(data, x_pred, y_pred, kriging_model):
 
 
 def main():
-    raw_data = generate_data(3)
+    raw_data = generate_data(4)
 
     x = raw_data[:, 0]
     y = raw_data[:, 1]
@@ -272,8 +309,10 @@ def main():
     grid_dx = abs(x.max() - x.min()) / ng
     grid_dy = abs(y.max() - y.min()) / ng
 
+    print 'Fitting ...'
     kriging_model = krig_fit(raw_data)
 
+    print 'Predicting ...'
     for i in xrange(ng):
         for j in xrange(ng):
             grid_x = x.min() + i * grid_dx
@@ -285,6 +324,16 @@ def main():
     grid_x = grid[:, 0]
     grid_y = grid[:, 1]
     grid_z = grid[:, 2]
+
+    print 'Exporting ... '
+    with open('/Users/mcleary/Desktop/dtm_manual_kriging.xyz', 'w') as output:
+        for i in xrange(len(grid_x)):
+            output.write(str(grid_x[i]))
+            output.write(' ')
+            output.write(str(grid_y[i]))
+            output.write(' ')
+            output.write(str(grid_z[i]))
+            output.write('\n')
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
