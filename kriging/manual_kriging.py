@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import math
 import sys
+from bisect import bisect
 from manual_kriging_data import generate_data
 
 
@@ -15,12 +16,18 @@ class DistancesMatrix:
     distances_matrix = []
 
     def __init__(self, data):
+        print 'Creating Distances Matrix ...'
+
         number_of_points = len(data)
 
+        percentage = 0.0
         for i in xrange(number_of_points):
             distances = []
 
-            print str(i) + ' of ' + str(number_of_points - 1)
+            current_percentage = (float(i) / float(number_of_points)) * 100.0
+            if int(current_percentage) % 5 == 0 and int(current_percentage) != percentage:
+                percentage = int(current_percentage)
+                print percentage
 
             for j in xrange(0, i):
                 dist_i_j = dist(data[i], data[j])
@@ -128,10 +135,6 @@ def semi_variogram(data):
 
 
 def semi_variogram_lags(data, lag_count=10):
-    semi_var = {}
-
-    # distances_matrix = dist_matrix(data)
-    # number_of_points = len(distances_matrix)
     distances_matrix = DistancesMatrix(data)
     number_of_points = len(data)
 
@@ -142,7 +145,8 @@ def semi_variogram_lags(data, lag_count=10):
     cutoff = math.sqrt((x.max() - x.min())**2 + (y.max() - y.min())**2) / 3.0
 
     lags = []
-    for lag_index in xrange(lag_count):
+    lag_ranges = []
+    for lag_index in xrange(1, lag_count + 1):
         lags.append(
             {
                 'range': [(lag_index - 1) * cutoff / lag_count, lag_index * cutoff / lag_count],
@@ -152,6 +156,7 @@ def semi_variogram_lags(data, lag_count=10):
                 }
             }
         )
+        lag_ranges.append((lag_index - 1) * cutoff / lag_count)
 
     for i in xrange(number_of_points):
         print i
@@ -159,19 +164,20 @@ def semi_variogram_lags(data, lag_count=10):
         for j in xrange(i, number_of_points):
             dist_i_j = distances_matrix.distance(i, j)
 
-            for lag in lags:
-                lag_range = lag['range']
+            lag_index = bisect(lag_ranges, dist_i_j) - 1
+            lag = lags[lag_index]
+            lag_range = lags[lag_index]['range']
 
-                if lag_range[0] < dist_i_j < lag_range[1]:
-                    semi_var_value = (z[i] - z[j])**2
+            if lag_range[0] < dist_i_j < lag_range[1]:
+                semi_var_value = (z[i] - z[j]) ** 2
 
-                    lag['semivardata']['dist'].append(dist_i_j)
-                    lag['semivardata']['semivar'].append(dist_i_j)
+                lag['semivardata']['dist'].append(dist_i_j)
+                lag['semivardata']['values'].append(semi_var_value)
 
     new_semi_var = []
-    for lag in semi_var.keys():
-        dist_values = semi_var[lag]['dist']
-        semi_var_values = semi_var[lag]['semivar']
+    for lag in lags:
+        dist_values = lag['semivardata']['dist']
+        semi_var_values = lag['semivardata']['values']
 
         if len(dist_values) == 0 or len(semi_var_values) == 0:
             continue
@@ -237,7 +243,7 @@ def linear_model_fit(x, y):
 
 
 def krig_fit(data):
-    semi_var = np.array(semi_variogram_lags(data, lags=10))
+    semi_var = np.array(semi_variogram_lags(data))
 
     h_values = semi_var[:, 0]
     semi_var_values = semi_var[:, 1]
@@ -292,6 +298,9 @@ def krig_pred(data, x_pred, y_pred, kriging_model):
     z = np.append(z, 1)
     pred = z.transpose().dot(invXR)
 
+    grid = []
+
+    grid_dx = abs(x.max() - x.min()) / ng
     return pred
 
 
@@ -304,9 +313,6 @@ def main():
 
     ng = 30
 
-    grid = []
-
-    grid_dx = abs(x.max() - x.min()) / ng
     grid_dy = abs(y.max() - y.min()) / ng
 
     print 'Fitting ...'
@@ -326,7 +332,8 @@ def main():
     grid_z = grid[:, 2]
 
     print 'Exporting ... '
-    with open('/Users/mcleary/Desktop/dtm_manual_kriging.xyz', 'w') as output:
+    # with open('/Users/mcleary/Desktop/dtm_manual_kriging.xyz', 'w') as output:
+    with open(r'D:\Dropbox\Doutorado\arvores\dtm_manual_kriging.xyz', 'w') as output:
         for i in xrange(len(grid_x)):
             output.write(str(grid_x[i]))
             output.write(' ')

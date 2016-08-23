@@ -57,7 +57,8 @@ def generate_data(data_index):
         return np.array(raw_data)
 
     if data_index == 4:
-        filepath = '/Users/mcleary/Desktop/mpi-dtm2.xyz'
+        # filepath = '/Users/mcleary/Desktop/mpi-dtm2.xyz'
+        filepath = r'D:\Dropbox\Doutorado\arvores\mpi-dtm2.xyz'
         xyz_file = open(filepath, 'r')
 
         print 'Lendo arquivo ' + filepath + ' ...'
