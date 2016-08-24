@@ -40,6 +40,7 @@ class DistancesMatrix:
             return 0.0
 
         if j > i:
+            # swap(i, j)
             i, j = j, i
 
         return self.distances_matrix[i][j]
@@ -52,18 +53,6 @@ def print_matrix(M):
             sys.stdout.write('{elem: .8f} '.format(elem=elem))
         print
     print '-' * len(M) * 12     # Linha Horizontal
-
-
-def dist_matrix(m):
-    distances_matrix = []
-
-    for p in m:
-        distances = []
-        for q in m:
-            distances.append(dist(p, q))
-        distances_matrix.append(distances)
-
-    return distances_matrix
 
 
 def mean(x):
@@ -134,8 +123,7 @@ def semi_variogram(data):
     return new_semi_var
 
 
-def semi_variogram_lags(data, lag_count=10):
-    distances_matrix = DistancesMatrix(data)
+def semi_variogram_lags(data, distances_matrix, lag_count=10):
     number_of_points = len(data)
 
     x = data[:, 0]
@@ -243,7 +231,8 @@ def linear_model_fit(x, y):
 
 
 def krig_fit(data):
-    semi_var = np.array(semi_variogram_lags(data))
+    distances_matrix = DistancesMatrix(data)
+    semi_var = np.array(semi_variogram_lags(data, distances_matrix=distances_matrix))
 
     h_values = semi_var[:, 0]
     semi_var_values = semi_var[:, 1]
@@ -254,8 +243,6 @@ def krig_fit(data):
     range = h_values.max()
     sill = nugget + lm_b * range
 
-    distances = np.array(dist_matrix(data))
-
     n = len(data)
     a = np.ones((n+1, n+1), np.float)
 
@@ -263,7 +250,7 @@ def krig_fit(data):
 
     for i in xrange(n):
         for j in xrange(n):
-            dist_i_j = distances[i, j]
+            dist_i_j = distances_matrix.distance(i, j)
             a[i, j] = sphermodel(dist_i_j, nugget, range, sill)
 
     return {
@@ -287,7 +274,7 @@ def krig_pred(data, x_pred, y_pred, kriging_model):
 
     n = len(z)
 
-    R = [0 for _ in xrange(n+1)]
+    R = [0 for _ in xrange(n + 1)]
 
     for j in xrange(n):
         xdist = dist([x[j], y[j]], [x_pred, y_pred])
@@ -298,9 +285,6 @@ def krig_pred(data, x_pred, y_pred, kriging_model):
     z = np.append(z, 1)
     pred = z.transpose().dot(invXR)
 
-    grid = []
-
-    grid_dx = abs(x.max() - x.min()) / ng
     return pred
 
 
@@ -309,16 +293,17 @@ def main():
 
     x = raw_data[:, 0]
     y = raw_data[:, 1]
-    z = raw_data[:, 2]
 
     ng = 30
 
+    grid_dx = abs(x.max() - x.min()) / ng
     grid_dy = abs(y.max() - y.min()) / ng
 
     print 'Fitting ...'
     kriging_model = krig_fit(raw_data)
 
     print 'Predicting ...'
+    grid = []
     for i in xrange(ng):
         for j in xrange(ng):
             grid_x = x.min() + i * grid_dx
@@ -332,8 +317,8 @@ def main():
     grid_z = grid[:, 2]
 
     print 'Exporting ... '
-    # with open('/Users/mcleary/Desktop/dtm_manual_kriging.xyz', 'w') as output:
-    with open(r'D:\Dropbox\Doutorado\arvores\dtm_manual_kriging.xyz', 'w') as output:
+    with open('/Users/mcleary/Desktop/dtm_manual_kriging.xyz', 'w') as output:
+    # with open(r'D:\Dropbox\Doutorado\arvores\dtm_manual_kriging.xyz', 'w') as output:
         for i in xrange(len(grid_x)):
             output.write(str(grid_x[i]))
             output.write(' ')
@@ -342,56 +327,12 @@ def main():
             output.write(str(grid_z[i]))
             output.write('\n')
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(x, y, z, c='r')
-    # ax.scatter(x_pred, y_pred, z_pred, c='g')
-    ax.scatter(grid_x, grid_y, grid_z, c='g')
-    plt.show()
-
-    return
-
-    # print_matrix(cov_matrix(raw_data))
-    # print_matrix(dist_matrix(raw_data))
-
-    # semi_var = np.array(semi_variogram(raw_data))
-    semi_var = np.array(semi_variogram_lags(raw_data, lags=10))
-
-    h_values = semi_var[:, 0]
-    semi_var_values = semi_var[:, 1]
-
-    lm_a, lm_b = linear_model_fit(h_values, semi_var_values)
-
-    my_nugget = lm_a
-    my_range = h_values.max()
-    my_sill = my_nugget + lm_b * my_range
-
-    print my_nugget, my_range, my_sill
-
-    print h_values
-    print semi_var_values
-
-    model_x = np.arange(0, h_values.max(), 0.1)
-    # nugget = 1.242169
-    # sill = 1.217841
-    # range = 18.95621
-    nugget = my_nugget
-    sill = my_sill
-    range = my_range
-    a = 1.0 / 3.0
-    model_y = [sphermodel(x, nugget, range, sill) for x in model_x]
-    model_y1 = [gaussmodel(x, nugget, range, sill, a) for x in model_x]
-    model_y2 = [expmodel(x, nugget, range, sill, a) for x in model_x]
-    model_y3 = [-0.001283 * x + 1.242169 for x in model_x]
-    plt.plot(model_x, model_y, 'b-')
-    # plt.plot(model_x, model_y1, 'g-')
-    # plt.plot(model_x, model_y2, 'g-')
-    plt.plot(model_x, model_y3, 'r-')
-
-    plt.plot(h_values, semi_var_values, 'ro')
-    plt.axis([0.0, h_values.max(), 0, semi_var_values.max()])
-    plt.grid(True)
-    plt.show()
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.scatter(x, y, z, c='r')
+    # # ax.scatter(x_pred, y_pred, z_pred, c='g')
+    # ax.scatter(grid_x, grid_y, grid_z, c='g')
+    # plt.show()
 
 
 if __name__ == '__main__':
