@@ -248,7 +248,15 @@ def krig_fit(data):
 
     a[n, n] = 0.0
 
+    print 'Covariance ...'
+    percentage = 0.0
     for i in xrange(n):
+
+        current_percentage = (float(i) / float(n)) * 100.0
+        if int(current_percentage) % 5 == 0 and int(current_percentage) != percentage:
+            percentage = int(current_percentage)
+            print percentage
+
         for j in xrange(n):
             dist_i_j = distances_matrix.distance(i, j)
             a[i, j] = sphermodel(dist_i_j, nugget, range, sill)
@@ -304,10 +312,12 @@ def main():
 
     print 'Predicting ...'
     grid = []
+    x_min = x.min()
+    y_min = y.min()
     for i in xrange(ng):
         for j in xrange(ng):
-            grid_x = x.min() + i * grid_dx
-            grid_y = y.min() + j * grid_dy
+            grid_x = x_min + i * grid_dx
+            grid_y = y_min + j * grid_dy
             grid_z = krig_pred(raw_data, grid_x, grid_y, kriging_model)
             grid.append([grid_x, grid_y, grid_z])
 
