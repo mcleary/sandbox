@@ -12,6 +12,10 @@ def dist(p, q):
     return math.sqrt((p[0] - q[0])**2 + (p[1] - q[1])**2)
 
 
+def dist(px, py, qx, qy):
+    return math.sqrt((px - qx)**2 + (py - qy)**2)
+
+
 class DistancesMatrix:
     distances_matrix = []
 
@@ -30,7 +34,7 @@ class DistancesMatrix:
                 print percentage
 
             for j in xrange(0, i):
-                dist_i_j = dist(data[i], data[j])
+                dist_i_j = dist(data[i][0], data[i][1], data[j][0], data[j][1])
                 distances.append(dist_i_j)
 
             self.distances_matrix.append(distances)
@@ -248,7 +252,7 @@ def krig_fit(data):
 
     a[n, n] = 0.0
 
-    print 'Covariance ...'
+    print 'Calculating covariance matrix ...'
     percentage = 0.0
     for i in xrange(n):
 
@@ -261,8 +265,11 @@ def krig_fit(data):
             dist_i_j = distances_matrix.distance(i, j)
             a[i, j] = sphermodel(dist_i_j, nugget, range, sill)
 
+    print 'Inverting covariance matrix ...'
+    inv_a = np.linalg.inv(a)
+
     return {
-        'A': a,
+        'InvA': inv_a,
         'nugget': nugget,
         'range': range,
         'sill': sill
@@ -270,11 +277,10 @@ def krig_fit(data):
 
 
 def krig_pred(data, x_pred, y_pred, kriging_model):
-    A = kriging_model['A']
+    inv_A = kriging_model['InvA']
     nugget = kriging_model['nugget']
     sill = kriging_model['sill']
     range = kriging_model['range']
-    inv_A = np.linalg.inv(A)
 
     x = data[:, 0]
     y = data[:, 1]
@@ -285,7 +291,7 @@ def krig_pred(data, x_pred, y_pred, kriging_model):
     R = [0 for _ in xrange(n + 1)]
 
     for j in xrange(n):
-        xdist = dist([x[j], y[j]], [x_pred, y_pred])
+        xdist = dist(x[j], y[j], x_pred, y_pred)
         R[j] = sphermodel(xdist, nugget, range, sill)
     R[n] = 1
 
@@ -302,7 +308,7 @@ def main():
     x = raw_data[:, 0]
     y = raw_data[:, 1]
 
-    ng = 30
+    ng = 100
 
     grid_dx = abs(x.max() - x.min()) / ng
     grid_dy = abs(y.max() - y.min()) / ng
@@ -315,6 +321,7 @@ def main():
     x_min = x.min()
     y_min = y.min()
     for i in xrange(ng):
+        print i
         for j in xrange(ng):
             grid_x = x_min + i * grid_dx
             grid_y = y_min + j * grid_dy
@@ -327,8 +334,8 @@ def main():
     grid_z = grid[:, 2]
 
     print 'Exporting ... '
-    with open('/Users/mcleary/Desktop/dtm_manual_kriging.xyz', 'w') as output:
-    # with open(r'D:\Dropbox\Doutorado\arvores\dtm_manual_kriging.xyz', 'w') as output:
+    # with open('/Users/mcleary/Desktop/dtm_manual_kriging.xyz', 'w') as output:
+    with open(r'D:\Dropbox\Doutorado\arvores\dtm_manual_kriging.xyz', 'w') as output:
         for i in xrange(len(grid_x)):
             output.write(str(grid_x[i]))
             output.write(' ')
