@@ -307,8 +307,9 @@ def main():
 
     x = raw_data[:, 0]
     y = raw_data[:, 1]
+    z = raw_data[:, 2]
 
-    ng = 100
+    ng = 30
 
     grid_dx = abs(x.max() - x.min()) / ng
     grid_dy = abs(y.max() - y.min()) / ng
@@ -335,21 +336,21 @@ def main():
 
     print 'Exporting ... '
     # with open('/Users/mcleary/Desktop/dtm_manual_kriging.xyz', 'w') as output:
-    with open(r'D:\Dropbox\Doutorado\arvores\dtm_manual_kriging.xyz', 'w') as output:
-        for i in xrange(len(grid_x)):
-            output.write(str(grid_x[i]))
-            output.write(' ')
-            output.write(str(grid_y[i]))
-            output.write(' ')
-            output.write(str(grid_z[i]))
-            output.write('\n')
+    # with open(r'D:\Dropbox\Doutorado\arvores\dtm_manual_kriging.xyz', 'w') as output:
+    #     for i in xrange(len(grid_x)):
+    #         output.write(str(grid_x[i]))
+    #         output.write(' ')
+    #         output.write(str(grid_y[i]))
+    #         output.write(' ')
+    #         output.write(str(grid_z[i]))
+    #         output.write('\n')
 
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(x, y, z, c='r')
-    # # ax.scatter(x_pred, y_pred, z_pred, c='g')
-    # ax.scatter(grid_x, grid_y, grid_z, c='g')
-    # plt.show()
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(x, y, z, c='r')
+    # ax.scatter(x_pred, y_pred, z_pred, c='g')
+    ax.scatter(grid_x, grid_y, grid_z, c='g')
+    plt.show()
 
 
 if __name__ == '__main__':

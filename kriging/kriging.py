@@ -243,7 +243,7 @@ def filter_points_v2():
 
 
 def kriging():
-    points_file = open(grid_filepath, 'r')
+    points_file = open('D:/Dropbox/Doutorado/Arvores/mpi-dtm2.xyz', 'r')
 
     points = []
     for point_entry in points_file.readlines():
@@ -268,16 +268,16 @@ def kriging():
     z_max = np_points[:, 2].max()
 
     points_to_predict = []
-    for x in np.linspace(x_min, x_max, 200):
-        for y in np.linspace(y_min, y_max, 200):
+    for x in np.linspace(x_min, x_max, 30):
+        for y in np.linspace(y_min, y_max, 30):
             points_to_predict.append([x, y])
             points_to_predict.append([x, y])
 
     print 'Predicting ...'
-    Z_predicted = gp.predict(points_to_predict)
+    Z_predicted = gp.predict(points_to_predict, batch_size=1)
 
     print 'Writing results ...'
-    dtm_file = open(dtm_filepath, 'w')
+    dtm_file = open('out.xyz', 'w')
     for i in xrange(len(points_to_predict)):
         dtm_file.write(str(points_to_predict[i][0]) + ' ' + str(points_to_predict[i][1]) + ' ' + str(Z_predicted[i]) + '\n')
     dtm_file.close()
@@ -287,4 +287,7 @@ if __name__ == '__main__':
     #generate_dummy_grid()
     #filter_points_v1()
     #filter_points_v2()
+    start = time.time()
     kriging()
+    end = time.time()
+    print 'Elapsed: ' + str(end - start)
