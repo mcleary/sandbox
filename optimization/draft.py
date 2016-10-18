@@ -13,6 +13,14 @@ def grad_f(x):
     return np.array([2*x[0], 20*x[1]])
 
 
+def h(x):
+    return x[0]**2 + x[1]**2
+
+
+def grad_h(x):
+    return np.array([2*x[0], 2*x[1]])
+
+
 def g(x):
     x0 = x[0]
     x1 = x[1]
@@ -32,24 +40,29 @@ def grad_g(x):
     return np.array([t1, t2])
 
 
-start_point = [1.5, 0.4]
-graph_res = 0.005
+start_point = [100, 100]
+graph_res = 1
 
-X = np.arange(-1.5, 1.5, graph_res)
-Y = np.arange(-0.4, 0.4, graph_res)
+X = np.arange(-150, 150, graph_res)
+Y = np.arange(-150, 150, graph_res)
 X, Y = np.meshgrid(X, Y)
-Z = g([X, Y])
+Z = f([X, Y])
 
 # fig = plt.figure()
 # ax = fig.add_subplot(111, projection='3d')
 # ax.plot_surface(X, Y, Z)
 # plt.show()
 
-seq_x = grad_descent_btls(start_point, f=g, grad_f=grad_g, max_iter=50, alpha=0.1, beta=0.7)
+seq_1 = grad_descent_btls(start_point, f=f, grad_f=grad_f, max_iter=50, alpha=0.1, beta=0.7)
+# seq_1 = grad_descent_fss(start_point, grad_f=grad_f)
+seq_2 = grad_descent_acc(start_point, grad_f=grad_f)
 
 plt.figure()
 plt.contour(X, Y, Z)
-plt.xlim([-1.5, 1.5])
-plt.ylim([-0.4, 0.4])
-plt.plot(seq_x[:, 0], seq_x[:, 1])
+# plt.xlim([-1.5, 1.5])
+# plt.ylim([-0.4, 0.4])
+plt.plot(seq_1[:, 0], seq_1[:, 1])
+plt.plot(seq_2[:, 0], seq_2[:, 1])
 plt.show()
+
+print(seq_2)

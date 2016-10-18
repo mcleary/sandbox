@@ -40,3 +40,28 @@ def grad_descent_btls(x0,  f, grad_f, max_iter=20, tol=10e-2, alpha=0.1, beta=0.
         iter += 1
 
     return np.array(x_seq)
+
+
+def grad_descent_acc(x0, grad_f, max_iter=20, tol=10e-2, alpha=0.1, beta=0.3):
+    if np.linalg.norm(grad_f(x0)) < tol:
+        return []
+
+    x_seq = []
+
+    iter = 0
+    xk = x0
+    p = np.zeros_like(x0)
+    while iter < max_iter and np.linalg.norm(grad_f(xk)) > tol:
+        dk = -grad_f(xk)
+
+        x_seq.append(np.copy(xk))
+
+        p = dk + beta * p
+        xk += alpha * p
+
+        iter += 1
+
+    return np.array(x_seq)
+
+
+
